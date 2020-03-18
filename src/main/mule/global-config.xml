@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd 
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+
+	<http:listener-config name="HTTP_Listener_config"
+		doc:name="HTTP Listener config" doc:id="6a8c4135-ecb5-4654-b386-10c3befc508a">
+		<http:listener-connection host="${http.host}"
+			port="${http.port}" />
+	</http:listener-config>
+
+	<http:request-config name="HTTP_Request_configuration"
+		doc:name="HTTP Request configuration" doc:id="ef6f3fcf-2bf3-437d-8ec7-5b9fde9d4cf8">
+		<http:request-connection host="${http.qotd.host}"
+			port="${http.qotd.port}" />
+	</http:request-config>
+
+	<file:config name="File_Config" doc:name="File Config"
+		doc:id="444d5f4f-2cdb-4c4c-a87f-66775002f663">
+		<file:connection workingDir="${write.dir}" />
+	</file:config>
+
+	<http:request-config name="HTTPS_Request_configuration"
+		doc:name="HTTP Request configuration" doc:id="9f40e639-9361-4229-80fa-b816e84bc089">
+		<http:request-connection protocol="HTTPS"
+			host="${https.translate.host}" port="${https.translate.port}" />
+	</http:request-config>
+
+	<jms:config name="JMS_Config" doc:name="JMS Config"
+		doc:id="ddf13a85-5f36-4b46-bc7d-ef16f148875c">
+		<jms:active-mq-connection username="${jms.user}"
+			password="${jms.pass}">
+			<jms:factory-configuration brokerUrl="${jms.broker.url}" />
+		</jms:active-mq-connection>
+	</jms:config>
+	<configuration-properties doc:name="Configuration properties"
+		doc:id="bffca08d-6e44-4b26-9651-ef0fda3b81d9" file="${mule.env}-qotd.yaml" />
+	<configuration doc:name="Configuration" doc:id="e0196475-2b86-457c-922e-4d51cb6231fd" defaultErrorHandler-ref="error-handlingError_Handler" />
+
+</mule>

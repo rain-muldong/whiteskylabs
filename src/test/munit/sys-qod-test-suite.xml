@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="sys-qod-test-suite.xml" />
+	<munit:test name="sys-qod-test-suite:\get-qotd:FlowTest" doc:id="9a5e0f14-088e-49c9-aca5-d846177723d4" description="Test">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="745777a2-6685-4d3c-80d3-e0786aeb60f8" processor="http:request">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="HTTP GET Quote of the Day REST API" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[MunitTools::getResourceAsString('eng-payload.json')]" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="sys-qod:\get-qotd:Flow" doc:id="acd03c4f-d76d-412f-ab48-06227c8c473c" name="sys-qod:\get-qotd:Flow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:verify-call doc:name="Verify call" doc:id="a989059b-e63c-4f0b-b05a-44e1f4ed1f90" processor="logger">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Log Start GET Quote of the Day" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+			<munit-tools:verify-call doc:name="Verify call" doc:id="62fe3ef8-bbe9-4655-b33f-1c2de5e8e368" processor="logger" times="1">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Log End GET Quote of the Day" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="sys-qod-test-suite:\get-qotd-error-too-many-requests:FlowTest" doc:id="1c7b7557-7af4-4ad1-8ede-cda5ee3cac4a" expectedErrorType="HTTP:TOO_MANY_REQUESTS">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="1d2ea0e6-f39d-4aff-bb2b-c852c5ef8518" processor="http:request">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="HTTP GET Quote of the Day REST API" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="HTTP:TOO_MANY_REQUESTS" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="sys-qod-test-suite:\get-qotd:FlowTest" doc:id="e96a0183-cce6-4465-913c-e029584d050e" name="sys-qod:\get-qotd:Flow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="4527ca6b-22eb-4505-a743-c34076b1989c" is='#[MunitTools::equalTo("Quote retrieval Limit reached (10 quotes/hour). Please Try again later.")]' expression="#[payload.message]"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="sys-qod-test-suite:\get-qotd-error-timeout:FlowTest" doc:id="c24f8ef2-94b7-4c5d-8590-357160ec860f" expectedErrorType="HTTP:TIMEOUT">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="0e3ba139-9f39-4c62-b308-e557a7aa002c" processor="http:request">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="HTTP GET Quote of the Day REST API" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="HTTP:TIMEOUT" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="sys-qod-test-suite:\get-qotd:FlowTest" doc:id="505b8d39-2c74-4f13-8255-173b8001e43e" name="sys-qod:\get-qotd:Flow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="0cc18fab-a009-42b9-b932-6bc6f4bafdde" is='#[MunitTools::equalTo("Cannot connect to QOTD service! Try again later!")]' expression="#[payload.message]"/>
+		</munit:validation>
+	</munit:test>
+
+</mule>

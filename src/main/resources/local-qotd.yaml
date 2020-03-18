@@ -1,0 +1,23 @@
+http:
+    host: "localhost"
+    port: "8081"
+    qotd:
+        host: "quotes.rest"
+        path: "/qod"
+        port: "80"
+https:
+    translate:
+        host: "translate.yandex.net"
+        port: "443"
+        url: "/api/v1.5/tr/translate?key=trnsl.1.1.20200305T023533Z.cbc34740d336ee24.de6cb5119aac9d6fc44c22c839ca9e5e617059bd&lang=en-"
+jms:
+    broker:
+        url: "tcp://localhost:61616"
+    destination: "Ex1TestTopic01"
+    pass: "admin"
+    subsname: "Ex1TestSub01"
+    user: "admin"
+languages: "it,es,ceb,pt,tl,la"
+write:
+    filename: "qotd_"
+    dir: "/Users/wslemployee/Desktop/ex1 file"

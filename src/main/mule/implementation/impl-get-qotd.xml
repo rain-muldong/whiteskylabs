@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<flow
+		name="impl-get-qotd:\implementation-qotd:Flow"
+		doc:id="02d9030d-e678-4038-b684-7c173a870bfe">
+		<logger
+			level="INFO"
+			doc:name="Logger"
+			doc:id="aedee472-8d20-4b34-908d-831ad1568adf" />
+		<flow-ref
+			doc:name="sys-qod:\get-qotd:Flow"
+			doc:id="ed9a35c8-92b3-4ec2-868b-49157e6843ce"
+			name="sys-qod:\get-qotd:Flow" />
+		<flow-ref
+			doc:name="impl-get-qotd:\prepare-qotd-data:Subflow"
+			doc:id="d4c8eae5-23c3-41f5-b2e2-f12319d083f4"
+			name="impl-get-qotd:\prepare-qotd-data:Subflow" />
+		<flow-ref
+			doc:name="sys-write:\write-to-file:Flow"
+			doc:id="89057fd5-0827-4057-bf78-443a69e9005a"
+			name="sys-write:\write-to-file:Flow" />
+		<flow-ref
+			doc:name="impl-get-qotd:\prepare-translation-data"
+			doc:id="09b7bc13-70ce-4f05-aefa-c17837e96f9d"
+			name="impl-get-qotd:\prepare-translation-data" />
+		<flow-ref
+			doc:name="sys-jms:\jms-publish:Flow"
+			doc:id="efc4214c-b2d5-47f7-accb-0b59e79d7d44"
+			name="sys-jms:\jmsPublish:Flow" />
+		<set-payload
+			value='#[%dw 2.0
+output application/json
+---
+
+{
+	message : "API call success!"
+}]'
+			doc:name="Set Payload"
+			doc:id="b254b1b1-baac-4f4e-9ef3-ccb6fde8f7c6" />
+		<logger
+			level="INFO"
+			doc:name="Logger"
+			doc:id="57731b4b-859f-4c21-b163-52e559d462e2" />
+	</flow>
+	<flow
+		name="impl-get-qotd:\JMS:Flow"
+		doc:id="43318f0f-63de-4a35-a16a-cae75df4a844"
+		initialState="started">
+		<jms:listener
+			doc:name="JMS Subscribe Ex1TestTopic01 TOPIC"
+			doc:id="cb19e649-29bd-47f7-9c93-14e81dc934cd"
+			config-ref="JMS_Config"
+			destination="${jms.destination}"
+			numberOfConsumers="1">
+			<jms:consumer-type>
+				<jms:topic-consumer
+					subscriptionName="${jms.subsname}" />
+			</jms:consumer-type>
+		</jms:listener>
+		<logger level="INFO" doc:name="Log START JMS Subscribe" doc:id="223da644-e893-4eb7-9635-c010eab8b586" message="#[correlationId]&lt;Log START JMS Subscribe&gt;#[payload]" />
+		<flow-ref doc:name="impl-get-qotd:\prepare-compressed-data" doc:id="536283f8-0441-4356-8bd4-610b0bdccf72" name="impl-get-qotd:\prepare-compressed-data" />
+		<flow-ref doc:name="sys-write:\write-to-file:Flow" doc:id="9fb37e2b-8bb6-4e10-abeb-fa54a6a8878e" name="sys-write:\write-to-file:Flow" />
+		<flow-ref
+			doc:name="impl-get-qotd:\decompress:Subflow"
+			doc:id="83a241c8-ae98-44c3-a114-db663416bd15"
+			name="impl-get-qotd:\decompress:Subflow" />
+	</flow>
+	<sub-flow
+		name="impl-get-qotd:\prepare-qotd-data:Subflow"
+		doc:id="5798ca2f-9d19-447a-9dd9-bd047e66fd0d">
+
+		<logger
+			level="INFO"
+			doc:name="Log START Prepare QOTD Data"
+			doc:id="64888544-7a15-406d-b4e6-73e452b5c5e8"
+			message="#[correlationId]&lt;Log START Prepare QOTD Data&gt;#[payload]" />
+		<ee:transform
+			doc:name="Initialize Variables"
+			doc:id="303e8f5e-90e5-4aeb-8f88-079d2b245a49">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="toWriteEngQuote"><![CDATA[%dw 2.0
+
+var stringDate = payload.contents.quotes[0].date
+var engDate = ((stringDate as Date {format: "yyyy-MM-dd"}) as String{format: "MMddyyyy"})
+var fileNameDate = ((stringDate as Date {format: "yyyy-MM-dd"}) as String{format: "MMddyy"})
+var toWriteQuote = payload.contents.quotes[0].quote
+var toWriteAuthor = payload.contents.quotes[0].author
+
+output application/json
+---
+{
+	fileContent : ((toWriteQuote ++ "_" ++ toWriteAuthor ++ "_" ++ engDate) as String default ""),
+	fileName : (Mule::p('write.filename')) ++ fileNameDate ++ ".txt",	
+}]]></ee:set-variable>
+				<ee:set-variable variableName="containerPayload"><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-variable>
+				<ee:set-variable variableName="toTranslateQuote"><![CDATA[%dw 2.0
+
+
+output application/json
+---
+{
+	englishQuote : payload.contents.quotes[0].quote,
+	nonenglang: (Mule::p('languages') as String default "") splitBy ","	
+
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<set-payload
+			value='#[%dw 2.0
+output text/plain
+---
+vars.toWriteEngQuote.fileContent ++ "\n"]'
+			doc:name="Set Payload"
+			doc:id="817942dd-02bd-4ac5-9f4b-41297bb46016" />
+		<logger
+			level="INFO"
+			doc:name="Log END Prepare QOTD Data"
+			doc:id="ad425ddf-2735-455a-83c2-115c1a1c62c2"
+			message="#[correlationId]&lt;Log END Prepare QOTD Data&gt;#[payload]" />
+
+	</sub-flow>
+	<sub-flow
+		name="impl-get-qotd:\prepare-translation-data"
+		doc:id="ceaf7288-1f05-450a-b791-f00109ff6d83">
+		<foreach
+			doc:name="For Each"
+			doc:id="abf10395-2658-4887-b891-5f44fabe16a3"
+			collection="#[vars.toTranslateQuote.nonenglang]">
+			<logger
+				level="INFO"
+				doc:name="Log START Prepare Translation Data"
+				doc:id="4d195752-066f-4ada-bc7e-d191d259da72"
+				message="#[correlationId]&lt;Log START Prepare Translation Data&gt;#[payload]" />
+			<ee:transform
+				doc:name="Prepare Payload and URL to Translate"
+				doc:id="49fd0a40-57d1-473e-a5b0-760838465830">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+
+output application/x-www-form-urlencoded
+---
+{
+	text : vars.toTranslateQuote.englishQuote
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="translateURL"><![CDATA[%dw 2.0
+
+var nonenglang = ((payload) as String default "")
+
+output text/plain
+---
+(Mule::p('https.translate.url')) ++ nonenglang ]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<flow-ref
+				doc:name="sys-translate:\call-translation:Flow"
+				doc:id="9315c333-702b-40d8-9da0-37d2ce3e60d0"
+				name="sys-translate:\call-translation:Flow" />
+			<ee:transform
+				doc:name="Append Compressed Quotes to Place Holder"
+				doc:id="81ff1dc3-310f-4674-be51-9b3d9caf2a85">
+				<ee:message>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="containerPayload"><![CDATA[%dw 2.0
+output application/json
+---
+vars.containerPayload + {
+	compressIndex : payload.Translation.text find " ",
+	compressedText : payload.Translation.text replace " " with(""),
+}]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+			<logger
+				level="INFO"
+				doc:name="Log END Prepare Translation Data"
+				doc:id="ab76237b-1819-4b3b-9931-85fcd62b9b48"
+				message="#[correlationId]&lt;Log END Prepare Translation Data&gt;#[payload]" />
+		</foreach>
+		<set-payload
+			value="#[vars.containerPayload]"
+			doc:name="Set Payload"
+			doc:id="a962ec19-1917-4e0b-8e60-ee9d45db5cb0" />
+	</sub-flow>
+	<sub-flow
+		name="impl-get-qotd:\prepare-compressed-data"
+		doc:id="503df9c4-799f-4980-9bd4-f55eb362ac4f">
+		<logger
+			level="INFO"
+			doc:name="Log START Prepare Compressed Data"
+			doc:id="df2e24f5-e61b-4f26-a2e1-6bbffeb3aaf9"
+			message="#[correlationId]&lt;Log START Prepare Compressed Data&gt;#[payload]" />
+		<ee:transform
+			doc:name="Prepare Compressed Payload"
+			doc:id="42fe3cad-554a-4401-a921-4dcbb83142e6">
+			<ee:message>
+				<ee:set-payload><![CDATA[var compressedTranslatedQuotes = vars.containerPayload.*compressedText map (value, index) -> (
+	vars.containerPayload.*compressedText[index] ++ " " ++ now() as Number 
+)
+
+output text/plain
+---
+compressedTranslatedQuotes joinBy"\n"]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+			</ee:variables>
+		</ee:transform>
+		<logger
+			level="INFO"
+			doc:name="Log END Prepare Compressed Data"
+			doc:id="fb3193a0-ad37-4158-95e4-2f1af8e31ec6"
+			message="#[correlationId]&lt;Log END Prepare Compressed Data&gt;#[payload]" />
+	</sub-flow>
+	<sub-flow
+		name="impl-get-qotd:\decompress:Subflow"
+		doc:id="1ee2273c-45e0-4531-8844-9e19ac97a73b">
+		<logger
+			level="INFO"
+			doc:name="Log START Decompress"
+			doc:id="7a4b12e2-d9a1-4fd5-a6cf-21ead0bf93b0"
+			message="#[correlationId]&lt;Log START Decompress&gt;#[payload]" />
+		<ee:transform
+			doc:name="Compressed JSON to Decompressed JSON"
+			doc:id="65a9a9b1-fd92-453b-b6f6-667fb7885358">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output text/plain
+
+var decompressedText = payload map(v,i) -> (v.compressIndex map (  
+if($$ == 0){
+
+	decompText: v.compressedText[0 to $-1]
+}
+
+else{
+	
+	decompText: v.compressedText[v.compressIndex[$$-1]-$$+1 to $-$$-1],
+	
+	(decompText : v.compressedText[$-$$ to (sizeOf(v.compressedText)-1)]) if((sizeOf(v.compressIndex)) == $$+1)
+
+}
+)).*decompText joinBy(" ")
+---
+decompressedText joinBy ("\n")]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger
+			level="INFO"
+			doc:name="Log END Decompress"
+			doc:id="d1ac3b63-9ac1-4c6a-92ac-99f0e681f05e"
+			message="#[correlationId]&lt;Log END Decompress&gt;#[payload]" />
+	</sub-flow>
+</mule>

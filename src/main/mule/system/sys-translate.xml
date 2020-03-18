@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow
+		name="sys-translate:\call-translation:Flow"
+		doc:id="3ec87bc0-ce80-42cb-bc8b-a9ed25131652">
+		<logger
+			level="INFO"
+			doc:name="Log Start Translate Quote of the Day"
+			doc:id="352cdd2a-f9c7-46a5-9cb4-dab5596d4709"
+			message='#[correlationId]&lt;Log START Translate Quote&gt;#[payload]' />
+		<http:request
+			method="POST"
+			doc:name="HTTPS POST Translate Quote of the Day XML API"
+			doc:id="34b8e2fe-e84e-4433-a741-1829ff760ec8"
+			config-ref="HTTPS_Request_configuration"
+			path="#[vars.translateURL]">
+
+
+		</http:request>
+		<logger
+			level="INFO"
+			doc:name="Log End Translate Quote of the Day"
+			doc:id="bdd8cf8d-950c-43b4-840a-9f45b901281c"
+			message='#[correlationId]&lt;Log END Translate Quote&gt;#[payload]' />
+		<error-handler>
+			<on-error-propagate
+				enableNotifications="true"
+				logException="true"
+				doc:name="On Error Propagate"
+				doc:id="224cd687-84be-409f-b871-6bebd3613411"
+				type="HTTP:CONNECTIVITY, HTTP:NOT_FOUND">
+				<logger level="INFO" doc:name="Error Log START Translate Quote" doc:id="4ac145f6-fde5-451a-bd35-e243524c84c5" message="#[correlationId]&lt;Error Log START Translate Quote&gt;#[payload]"/>
+				<ee:transform
+					doc:name="Set Custom Error Message"
+					doc:id="a0775c5c-4eb1-41ab-881d-5e4821ed425d">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "Translator service cannot be reached. Please try again later."
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Error Log END Translate Quote" doc:id="c17d1809-ad1b-4667-bc92-fc99e46e9a24" message="#[correlationId]&lt;Error Log END Translate Quote&gt;#[payload]"/>
+			</on-error-propagate>
+			<on-error-propagate
+				enableNotifications="true"
+				logException="true"
+				doc:name="On Error Propagate"
+				doc:id="bc7294dd-8970-4dbe-96c6-f9081ea165c6"
+				type="HTTP:FORBIDDEN, HTTP:UNAUTHORIZED">
+				<logger level="INFO" doc:name="Error Log START Translate Quote" doc:id="393bc26c-2d36-408c-8e20-44d15c61a21a" message="#[correlationId]&lt;Error Log START Translate Quote&gt;#[payload]"/>
+				<ee:transform
+					doc:name="Set Custom Error Message"
+					doc:id="f7a587c3-c99d-4ec6-a580-0b79b3659ec5">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Translation request unauthorized. Please check if apikey used is still valid."
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Error Log END Translate Quote" doc:id="ad261278-6e81-4613-ae66-c5bcde42f492" message="#[correlationId]&lt;Error Log END Translate Quote&gt;#[payload]"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

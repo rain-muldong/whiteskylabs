@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<munit:config name="sys-jms-test-suite.xml" />
+	<munit:test name="sys-jms-test-suite-sys-jms:\jmsPublish:FlowTest" doc:id="0f168f3c-a60e-4dd5-bf6b-5ae159858285" description="Test">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="e1de4670-8824-4dbb-b26c-eb5a6c9120df" processor="jms:publish">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="JMS Publish Ex1TestTopic01 TOPIC" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow-ref to sys-jms:\jmsPublish:Flow" doc:id="b6acaca5-3159-4b3c-b12c-9aaa5b627cfa" name="sys-jms:\jmsPublish:Flow"/>
+		</munit:execution>
+		<munit:validation>
+			<munit-tools:verify-call doc:name="Verify call" doc:id="9efd4dc1-e821-4d1a-9cbd-2761300429ca" processor="logger">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Log START JMS Publish" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+			<munit-tools:verify-call doc:name="Verify call" doc:id="5548d73a-b07e-4c2f-a198-cc95460516e6" processor="logger">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Log END JMS Publish" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="sys-jms-test-suiteTest" doc:id="0ef4441a-7302-4b42-b4c8-cfe9a51cbfe9" expectedErrorType="JMS:CONNECTIVITY">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="5086db0b-88c1-4f71-ae1e-2772bdf49c6f" processor="jms:publish">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="JMS Publish Ex1TestTopic01 TOPIC" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="JMS:CONNECTIVITY" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow Reference" doc:id="f269c684-f48e-4005-a113-9c4e462a60ea" name="sys-jms:\jmsPublish:Flow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="e1e685fc-71ce-426d-b1e2-8c7ef05927c5" is='#[MunitTools::equalTo("JMS Publish connection failed. Try again later.")]' expression="#[payload.message]"/>
+		</munit:validation>
+	</munit:test>
+
+</mule>

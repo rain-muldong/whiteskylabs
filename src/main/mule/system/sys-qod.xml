@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow
+		name="sys-qod:\get-qotd:Flow"
+		doc:id="22af781a-823a-41ca-bc3e-42e5e24de490">
+		<logger
+			level="INFO"
+			doc:name="Log Start GET Quote of the Day"
+			doc:id="f982cb09-0891-4ed4-89ca-f6957b9c8d00"
+			message='#[correlationId]&lt;Log START Get Quote of the Day&gt;#[payload]' />
+		<http:request
+			method="GET"
+			doc:name="HTTP GET Quote of the Day REST API"
+			doc:id="d61136c6-923e-45bb-894c-fc75277731aa"
+			path="${http.qotd.path}"
+			config-ref="HTTP_Request_configuration" />
+		<logger
+			level="INFO"
+			doc:name="Log End GET Quote of the Day"
+			doc:id="57ec45d2-62c9-42bf-8f7e-2aa1374e5664"
+			message='#[correlationId]&lt;Log END Get Quote of the Day&gt;#[payload]' />
+		<error-handler>
+			<on-error-propagate
+				enableNotifications="true"
+				logException="true"
+				doc:name="On Error Propagate"
+				doc:id="af8b3c59-338e-4a74-a021-7a36e6686c86"
+				type="HTTP:CONNECTIVITY, HTTP:NOT_FOUND, HTTP:TIMEOUT">
+				<logger level="INFO" doc:name="Logger" doc:id="afdd497e-fc62-4930-9ebd-90269d15095a" message="#[correlationId]&lt;Error Log START Get Quote of the Day&gt;#[payload]"/>
+				<ee:transform
+					doc:name="Set Custom Error Message"
+					doc:id="5b059a48-a83f-4016-b650-0b24646acf86">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Cannot connect to QOTD service! Try again later!"	
+}
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="26d35a39-4a3c-48f8-b23b-8d3b368d928d" message="#[correlationId]&lt;Error Log END Get Quote of the Day&gt;#[payload]"/>
+			</on-error-propagate>
+			<on-error-propagate
+				enableNotifications="true"
+				logException="true"
+				doc:name="On Error Propagate"
+				doc:id="6c08812f-b6bd-4ce4-9e35-76ba0c76ba48"
+				type="HTTP:TOO_MANY_REQUESTS">
+				<logger level="INFO" doc:name="Logger" doc:id="bbbe4a85-d50d-4db9-a9f5-db092aae72df" message="#[correlationId]&lt;Error Log START Get Quote of the Day&gt;#[payload]"/>
+				<ee:transform
+					doc:name="Set Custom Error Message"
+					doc:id="940e443a-28ef-4300-ba71-7c3e1fbc0551">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "Quote retrieval Limit reached (10 quotes/hour). Please Try again later."
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="443f25f6-bbb2-451f-84e1-424484b127c5" message="#[correlationId]&lt;Error Log END Get Quote of the Day&gt;#[payload]"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

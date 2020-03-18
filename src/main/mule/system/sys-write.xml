@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+	<flow
+		name="sys-write:\write-to-file:Flow"
+		doc:id="079d6e99-410f-44a9-b722-df9b6f2d08c6">
+		<logger level="INFO" doc:name="Log START Write to File" doc:id="9a532190-3a88-413b-96eb-be7c6d64e285" message="#[correlationId]&lt;Log START Write to File&gt;#[payload]"/>
+		<file:write doc:name="Write to File" doc:id="57a78250-6ec2-49c8-9545-cfbb3e211989" path="#[vars.toWriteEngQuote.fileName]" config-ref="File_Config" mode="APPEND">
+		</file:write>
+		<logger level="INFO" doc:name="Log END Write to File" doc:id="2ee55e27-b4ef-47a5-9a61-3ee66a236d13" message="#[correlationId]&lt;Log END Write to File&gt;#[payload]"/>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d6bd133b-5d3b-4945-8391-3c53eec66791" type="FILE:CONNECTIVITY">
+				<logger level="INFO" doc:name="Error Log START Write to File" doc:id="25e39e20-74e9-40a3-b250-9cf07c52ea7b" message="#[correlationId]&lt;Error Log START Write to File&gt;#[payload]"/>
+				<ee:transform doc:name="Transform Message" doc:id="ce8172ad-026f-4105-af58-753303ae11e3" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Unable to connect to file."
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Error Log END Write to File" doc:id="771133dd-626d-4993-9ae5-eb432e536ea6" message="#[correlationId]&lt;Error Log END Write to File&gt;#[payload]"/>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="f111a29f-56ac-4c35-a222-d4f5a3f79474" type="FILE:ACCESS_DENIED">
+				<logger level="INFO" doc:name="Error Log START Write to File" doc:id="feaf1771-6a8a-4684-bedf-12d3417cd3cb" message="#[correlationId]&lt;Error Log START Write to File&gt;#[payload]"/>
+				<ee:transform doc:name="Transform Message" doc:id="addc8777-4eb4-4866-8803-655dc595a402" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "Unable to access file."
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Error Log END Write to File" doc:id="d933c08a-9714-47e0-8279-764e19739403" message="#[correlationId]&lt;Error Log END Write to File&gt;#[payload]"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>
