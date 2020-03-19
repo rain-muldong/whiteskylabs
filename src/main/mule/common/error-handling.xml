@@ -39,10 +39,6 @@ output application/json
 				doc:name="LOG End Global Error Handler"
 				doc:id="43e43f67-13c6-4656-8325-083cf251961a"
 				message="#[correlationId]&lt;Error Log END Global Error&gt;]" />
-			<set-payload
-				value="#[payload.message]"
-				doc:name="Set Payload"
-				doc:id="208a0f99-eec9-4ccb-83bd-a79e7f32b3ee" />
 		</on-error-continue>
 	</error-handler>
 </mule>

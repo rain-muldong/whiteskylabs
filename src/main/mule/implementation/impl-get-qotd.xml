@@ -16,8 +16,8 @@ http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/fil
 		doc:id="02d9030d-e678-4038-b684-7c173a870bfe">
 		<logger
 			level="INFO"
-			doc:name="Logger"
-			doc:id="aedee472-8d20-4b34-908d-831ad1568adf" />
+			doc:name="Log START Implem QOTD"
+			doc:id="aedee472-8d20-4b34-908d-831ad1568adf" message="#[correlationId]&lt;Log START Implem QOTD&gt;#[payload]"/>
 		<flow-ref
 			doc:name="sys-qod:\get-qotd:Flow"
 			doc:id="ed9a35c8-92b3-4ec2-868b-49157e6843ce"
@@ -46,17 +46,16 @@ output application/json
 {
 	message : "API call success!"
 }]'
-			doc:name="Set Payload"
+			doc:name="Set return message as Payload"
 			doc:id="b254b1b1-baac-4f4e-9ef3-ccb6fde8f7c6" />
 		<logger
 			level="INFO"
-			doc:name="Logger"
-			doc:id="57731b4b-859f-4c21-b163-52e559d462e2" />
+			doc:name="Log END Implem QOTD"
+			doc:id="57731b4b-859f-4c21-b163-52e559d462e2" message="#[correlationId]&lt;Log END Implem QOTD&gt;#[payload]"/>
 	</flow>
 	<flow
 		name="impl-get-qotd:\JMS:Flow"
-		doc:id="43318f0f-63de-4a35-a16a-cae75df4a844"
-		initialState="started">
+		doc:id="43318f0f-63de-4a35-a16a-cae75df4a844">
 		<jms:listener
 			doc:name="JMS Subscribe Ex1TestTopic01 TOPIC"
 			doc:id="cb19e649-29bd-47f7-9c93-14e81dc934cd"
@@ -93,17 +92,14 @@ output application/json
 			<ee:variables>
 				<ee:set-variable variableName="toWriteEngQuote"><![CDATA[%dw 2.0
 
-var stringDate = payload.contents.quotes[0].date
-var engDate = ((stringDate as Date {format: "yyyy-MM-dd"}) as String{format: "MMddyyyy"})
-var fileNameDate = ((stringDate as Date {format: "yyyy-MM-dd"}) as String{format: "MMddyy"})
 var toWriteQuote = payload.contents.quotes[0].quote
 var toWriteAuthor = payload.contents.quotes[0].author
 
 output application/json
 ---
 {
-	fileContent : ((toWriteQuote ++ "_" ++ toWriteAuthor ++ "_" ++ engDate) as String default ""),
-	fileName : (Mule::p('write.filename')) ++ fileNameDate ++ ".txt",	
+	fileContent : ((toWriteQuote ++ "_" ++ toWriteAuthor ++ "_" ++ (now() as String{format: "MMddyyyy"})) as String default ""),
+	fileName : (Mule::p('write.filename')) ++ (now() as String{format: "MMddyy"}) ++ ".txt",	
 }]]></ee:set-variable>
 				<ee:set-variable variableName="containerPayload"><![CDATA[%dw 2.0
 output application/json
@@ -126,7 +122,7 @@ output application/json
 output text/plain
 ---
 vars.toWriteEngQuote.fileContent ++ "\n"]'
-			doc:name="Set Payload"
+			doc:name="Set fileContent to Payload"
 			doc:id="817942dd-02bd-4ac5-9f4b-41297bb46016" />
 		<logger
 			level="INFO"
@@ -196,7 +192,7 @@ vars.containerPayload + {
 		</foreach>
 		<set-payload
 			value="#[vars.containerPayload]"
-			doc:name="Set Payload"
+			doc:name="Set containerPayload to Payload"
 			doc:id="a962ec19-1917-4e0b-8e60-ee9d45db5cb0" />
 	</sub-flow>
 	<sub-flow
@@ -207,12 +203,13 @@ vars.containerPayload + {
 			doc:name="Log START Prepare Compressed Data"
 			doc:id="df2e24f5-e61b-4f26-a2e1-6bbffeb3aaf9"
 			message="#[correlationId]&lt;Log START Prepare Compressed Data&gt;#[payload]" />
+		<set-variable doc:name="Set Payload to containerPayload" doc:id="8fe6d17f-989d-442c-bdb2-d82ee7f66ffb" variableName="containerPayload" value="#[payload]"/>
 		<ee:transform
 			doc:name="Prepare Compressed Payload"
 			doc:id="42fe3cad-554a-4401-a921-4dcbb83142e6">
 			<ee:message>
-				<ee:set-payload><![CDATA[var compressedTranslatedQuotes = vars.containerPayload.*compressedText map (value, index) -> (
-	vars.containerPayload.*compressedText[index] ++ " " ++ now() as Number 
+				<ee:set-payload><![CDATA[var compressedTranslatedQuotes = payload.*compressedText map (value, index) -> (
+	payload.*compressedText[index] ++ " " ++ now() as Number 
 )
 
 output text/plain
@@ -220,6 +217,10 @@ output text/plain
 compressedTranslatedQuotes joinBy"\n"]]></ee:set-payload>
 			</ee:message>
 			<ee:variables>
+				<ee:set-variable variableName="toWriteEngQuote" ><![CDATA[%dw 2.0
+output application/json
+---
+fileName : (Mule::p('write.filename')) ++ (now() as String{format: "MMddyy"}) ++ ".txt"]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<logger
@@ -236,6 +237,7 @@ compressedTranslatedQuotes joinBy"\n"]]></ee:set-payload>
 			doc:name="Log START Decompress"
 			doc:id="7a4b12e2-d9a1-4fd5-a6cf-21ead0bf93b0"
 			message="#[correlationId]&lt;Log START Decompress&gt;#[payload]" />
+		<set-payload value="#[vars.containerPayload]" doc:name="Set containerPayload to Payload" doc:id="19e0c5ab-b8ab-4407-83cb-e6d8d2c465cd" />
 		<ee:transform
 			doc:name="Compressed JSON to Decompressed JSON"
 			doc:id="65a9a9b1-fd92-453b-b6f6-667fb7885358">
@@ -243,17 +245,17 @@ compressedTranslatedQuotes joinBy"\n"]]></ee:set-payload>
 				<ee:set-payload><![CDATA[%dw 2.0
 output text/plain
 
-var decompressedText = payload map(v,i) -> (v.compressIndex map (  
+var decompressedText = payload map(value,iindex) -> (value.compressIndex map (  
 if($$ == 0){
 
-	decompText: v.compressedText[0 to $-1]
+	decompText: value.compressedText[0 to $-1]
 }
 
 else{
 	
-	decompText: v.compressedText[v.compressIndex[$$-1]-$$+1 to $-$$-1],
+	decompText: value.compressedText[value.compressIndex[$$-1]-$$+1 to $-$$-1],
 	
-	(decompText : v.compressedText[$-$$ to (sizeOf(v.compressedText)-1)]) if((sizeOf(v.compressIndex)) == $$+1)
+	(decompText : value.compressedText[$-$$ to (sizeOf(value.compressedText)-1)]) if((sizeOf(value.compressIndex)) == $$+1)
 
 }
 )).*decompText joinBy(" ")

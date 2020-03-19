@@ -17,15 +17,35 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 			doc:name="Log START JMS Publish"
 			doc:id="b63a72ee-c64d-4818-8b90-b6c83799d457"
 			message="#[correlationId]&lt;Log START JMS Publish&gt;#[payload]" />
-		<jms:publish doc:name="JMS Publish Ex1TestTopic01 TOPIC" doc:id="596c2718-1cbb-4bf3-ad6f-8f2f8bcb3c71" config-ref="JMS_Config" destination="${jms.destination}" destinationType="TOPIC">
+		<jms:publish
+			doc:name="JMS Publish Ex1TestTopic01 TOPIC"
+			doc:id="596c2718-1cbb-4bf3-ad6f-8f2f8bcb3c71"
+			config-ref="JMS_Config"
+			destination="${jms.destination}"
+			destinationType="TOPIC">
 		</jms:publish>
-		<logger level="INFO" doc:name="Log END JMS Publish" doc:id="c0d3effa-cccc-4615-a928-19bd7b8899bc" message="#[correlationId]&lt;Log END JMS Publish&gt;#[payload]"/>
-		<error-handler >
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7014d89b-1318-4908-a62e-ae78fdbc5929" type="JMS:CONNECTIVITY, JMS:DESTINATION_NOT_FOUND">
-				<logger level="INFO" doc:name="Logger" doc:id="557583ab-122d-4031-b271-4fabc44952eb" message="#[correlationId]&lt;Error Log START JMS Publish&gt;#[payload]"/>
-				<ee:transform doc:name="Transform Message" doc:id="c10f72cd-acf2-47e1-9b18-b29b4ece10fb" >
-					<ee:message >
-						<ee:set-payload ><![CDATA[%dw 2.0
+		<logger
+			level="INFO"
+			doc:name="Log END JMS Publish"
+			doc:id="c0d3effa-cccc-4615-a928-19bd7b8899bc"
+			message="#[correlationId]&lt;Log END JMS Publish&gt;#[payload]" />
+		<error-handler>
+			<on-error-propagate
+				enableNotifications="true"
+				logException="true"
+				doc:name="On Error Propagate"
+				doc:id="7014d89b-1318-4908-a62e-ae78fdbc5929"
+				type="JMS:CONNECTIVITY, JMS:DESTINATION_NOT_FOUND">
+				<logger
+					level="INFO"
+					doc:name="Logger"
+					doc:id="557583ab-122d-4031-b271-4fabc44952eb"
+					message="#[correlationId]&lt;Error Log START JMS Publish&gt;#[payload]" />
+				<ee:transform
+					doc:name="Transform Message"
+					doc:id="c10f72cd-acf2-47e1-9b18-b29b4ece10fb">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
@@ -33,7 +53,11 @@ output application/json
 }]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
-				<logger level="INFO" doc:name="Logger" doc:id="5716d5bd-a80d-4708-9c7c-d3e9fa983eef" message="#[correlationId]&lt;Error Log END JMS Publish&gt;#[payload]"/>
+				<logger
+					level="INFO"
+					doc:name="Logger"
+					doc:id="5716d5bd-a80d-4708-9c7c-d3e9fa983eef"
+					message="#[correlationId]&lt;Error Log END JMS Publish&gt;#[payload]" />
 			</on-error-propagate>
 		</error-handler>
 	</flow>

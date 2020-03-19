@@ -8,10 +8,65 @@
 		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
 		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
 	<munit:config name="sys-qotd-api-test-suite.xml" />
-	<munit:test name="sys-qotd-api-test-suite-sys-qotd-api:\system-qotd:FlowTest" doc:id="56c3c3bd-5b19-4656-88ed-f2b26d5235d6" description="Test">
+	<munit:test name="sys-qotd-api-test-suite:\system-qotd-happy-path:FlowTest" doc:id="56c3c3bd-5b19-4656-88ed-f2b26d5235d6" description="Test">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when QOTD API is called" doc:id="f0135773-a054-4bea-b216-47a5426efcca" processor="http:request">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute whereValue="HTTP GET Quote of the Day REST API" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[MunitTools::getResourceAsString('eng-payload.json')]" mediaType="application/json" encoding="UTF-8" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock when Translate API is called" doc:id="78c879ba-83ff-478d-acb8-0a1fd3cff1bb" processor="http:request">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="HTTPS POST Translate Quote of the Day XML API" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:payload value="#[MunitTools::getResourceAsString('tran-quote.xml')]" mediaType="application/xml" encoding="UTF-8" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+			<munit-tools:mock-when doc:name="Mock when JMS Publish is called" doc:id="320637c9-fbf2-4f6e-9899-2fd8d82e1a9a" processor="jms:publish">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="JMS Publish Ex1TestTopic01 TOPIC" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+		</munit:behavior>
 		<munit:execution >
 			<flow-ref doc:name="Flow-ref to sys-qotd-api:\system-qotd:Flow" doc:id="432d0029-9029-42be-8468-2099da3cbb96" name="sys-qotd-api:\system-qotd:Flow"/>
 		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert doc:name="Assert expression" doc:id="9450d048-f96a-49ab-906d-1c29483ecc28" />
+			<munit-tools:verify-call doc:name="Verify call" doc:id="e8954f73-dd90-45ae-b0c7-503e87cd5481" processor="logger" times="6">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Log Start Translate Quote of the Day" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+			<munit-tools:verify-call doc:name="Verify call" doc:id="48e6ab50-9d31-4342-8a1a-36d1961cabe0" processor="logger" times="6">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Log End Translate Quote of the Day" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
 	</munit:test>
+	<munit:test name="sys-qotd-api-test-suite:\jmsflow:FlowTest" doc:id="271f2c99-9240-481d-92f9-95454b661606" >
+		<munit:behavior>
+			<munit-tools:mock-when doc:name="Mock when" doc:id="9dce5ec4-a391-4c8a-ae2e-5a861436cbd3" processor="jms:listener">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="JMS Subscribe Ex1TestTopic01 TOPIC" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<munit:set-event doc:name="Set Payload from JMS Subscribe" doc:id="2aa5609c-26aa-414b-b000-3b4576eaca2d" >
+				<munit:payload value="#[MunitTools::getResourceAsString('subscribe-payload.json')]" encoding="UTF-8" mediaType="application/json" />
+			</munit:set-event>
+			<flow-ref doc:name="impl-get-qotd:\JMS:Flow" doc:id="75c861ce-e41c-4076-a358-9a2983b845e2" name="impl-get-qotd:\JMS:Flow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="87491282-ab77-4fff-b965-5e55dab827db" is="#[MunitTools::containsString('Non pioveva quando Noè costruì larca....')]" expression="#[payload]"/>
+		</munit:validation>
+	</munit:test>
+
 
 </mule>
