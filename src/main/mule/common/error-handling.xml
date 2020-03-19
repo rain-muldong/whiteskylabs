@@ -19,7 +19,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 				level="INFO"
 				doc:name="LOG Start Global Error Handler"
 				doc:id="3a439088-4411-43ab-acab-02fb8b5be781"
-				message="#[correlationId]&lt;Error Log START Global Error&gt;]" />
+				message="#[correlationId]&lt;Error Log START Global Error&gt;#[payload]" />
 			<ee:transform
 				doc:name="Transform Message"
 				doc:id="8e66a09a-2d3e-4985-a835-9805fdfb5e5c">
@@ -29,7 +29,7 @@ output application/json
 ---
 {
 	"message": payload.message default error.description,
-	"error type" : error.errorType,
+	"error_type" : error.errorType,
 	"description" : error.detailedDescription
 }]]></ee:set-payload>
 				</ee:message>
@@ -38,7 +38,7 @@ output application/json
 				level="INFO"
 				doc:name="LOG End Global Error Handler"
 				doc:id="43e43f67-13c6-4656-8325-083cf251961a"
-				message="#[correlationId]&lt;Error Log END Global Error&gt;]" />
+				message="#[correlationId]&lt;Error Log END Global Error&gt; #[payload]" />
 		</on-error-continue>
 	</error-handler>
 </mule>

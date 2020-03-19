@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
-	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+	xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xsi:schemaLocation="
 		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
@@ -37,9 +40,9 @@
 		</munit:execution>
 		<munit:validation >
 			<munit-tools:assert doc:name="Assert expression" doc:id="9450d048-f96a-49ab-906d-1c29483ecc28" />
-			<munit-tools:verify-call doc:name="Verify call" doc:id="e8954f73-dd90-45ae-b0c7-503e87cd5481" processor="logger" times="6">
+			<munit-tools:verify-call doc:name="Verify Translate API was called 6 times" doc:id="e8954f73-dd90-45ae-b0c7-503e87cd5481" processor="http:request" times="6">
 				<munit-tools:with-attributes >
-					<munit-tools:with-attribute whereValue="Log Start Translate Quote of the Day" attributeName="doc:name" />
+					<munit-tools:with-attribute whereValue="HTTPS POST Translate Quote of the Day XML API" attributeName="doc:name" />
 				</munit-tools:with-attributes>
 			</munit-tools:verify-call>
 			<munit-tools:verify-call doc:name="Verify call" doc:id="48e6ab50-9d31-4342-8a1a-36d1961cabe0" processor="logger" times="6">
@@ -49,7 +52,7 @@
 			</munit-tools:verify-call>
 		</munit:validation>
 	</munit:test>
-	<munit:test name="sys-qotd-api-test-suite:\jmsflow:FlowTest" doc:id="271f2c99-9240-481d-92f9-95454b661606" >
+	<munit:test name="sys-qotd-api-test-suite:\jmsflow:FlowTest" doc:id="271f2c99-9240-481d-92f9-95454b661606" description="Test JMS">
 		<munit:behavior>
 			<munit-tools:mock-when doc:name="Mock when" doc:id="9dce5ec4-a391-4c8a-ae2e-5a861436cbd3" processor="jms:listener">
 				<munit-tools:with-attributes >
@@ -67,6 +70,53 @@
 			<munit-tools:assert-that doc:name="Assert that" doc:id="87491282-ab77-4fff-b965-5e55dab827db" is="#[MunitTools::containsString('Non pioveva quando Noè costruì larca....')]" expression="#[payload]"/>
 		</munit:validation>
 	</munit:test>
-
-
+	<munit:test name="sys-qotd-api-test-suiteTest" doc:id="378ac28b-ea3e-4d67-ada7-9a6924e16fa6" expectedErrorType="HTTP:CONNECTIVITY">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="3e31603c-962a-4bbf-bc9a-1872069260a6" processor="http:request">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="HTTP GET Quote of the Day REST API" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="HTTP:CONNECTIVITY" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow Reference" doc:id="44a0b5e8-d030-4a6c-bef4-c0caa62027eb" name="sys-qod:\get-qotd:Flow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="0663dfb8-f0c5-4ddb-b913-4d9140d475f5" is="#[MunitTools::notNullValue()]" expression="#[payload]"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="sys-qotd-api-test-suiteTest1" doc:id="8f847f85-71fe-4c79-b12d-379d01400bb4" expectedErrorType="HTTP:TOO_MANY_REQUESTS">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when" doc:id="72b729d8-fa59-4ed8-a049-b49a2e73da54" processor="http:request">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="HTTP GET Quote of the Day REST API" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="HTTP:TOO_MANY_REQUESTS" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<flow-ref doc:name="Flow Reference" doc:id="7d76c975-7692-4655-8ad9-e388c8ac6662" name="sys-qotd-api:\system-qotd:Flow"/>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="66695827-a2aa-4808-ba12-ff4fa5f4c4a3" is='#[MunitTools::equalTo({
+  "message": "Quote retrieval Limit reached (10 quotes/hour). Please Try again later.",
+  "error_type": {
+    "identifier": "TOO_MANY_REQUESTS",
+    "parentErrorType": {
+      "identifier": "ANY",
+      "parentErrorType": null,
+      "namespace": "MULE"
+    },
+    "namespace": "HTTP"
+  },
+  "description": ""
+})]' expression="#[payload]" message='"wowowee"'/>
+		</munit:validation>
+	</munit:test>
+		
 </mule>

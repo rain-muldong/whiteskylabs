@@ -20,4 +20,4 @@ jms:
 languages: "it,es,ceb,pt,tl,la"
 write:
     filename: "qotd_"
-    dir: "/Users/wslemployee/Desktop/ex1 file"
+    dir: "/Users/wslemployee/Desktop/ex1_file"
