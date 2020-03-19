@@ -10,19 +10,9 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 	<error-handler
 		name="error-handlingError_Handler"
 		doc:id="8802a6b8-efc5-4255-9a7d-c0e8c9fecfbd">
-		<on-error-continue
-			enableNotifications="true"
-			logException="true"
-			doc:name="On Error Continue"
-			doc:id="2c66abfc-ddaf-4bcf-b11f-8bd894e10730">
-			<logger
-				level="INFO"
-				doc:name="LOG Start Global Error Handler"
-				doc:id="3a439088-4411-43ab-acab-02fb8b5be781"
-				message="#[correlationId]&lt;Error Log START Global Error&gt;#[payload]" />
-			<ee:transform
-				doc:name="Transform Message"
-				doc:id="8e66a09a-2d3e-4985-a835-9805fdfb5e5c">
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="be37ca90-92ad-4feb-b53a-2ad20c0cc6f5" >
+			<logger level="INFO" doc:name="LOG Start Global Error Handler" doc:id="3a439088-4411-43ab-acab-02fb8b5be781" message="#[correlationId]&lt;Error Log START Global Error&gt;#[payload]" />
+			<ee:transform doc:name="Transform Message" doc:id="8e66a09a-2d3e-4985-a835-9805fdfb5e5c">
 				<ee:message>
 					<ee:set-payload><![CDATA[%dw 2.0
 output application/json
@@ -34,11 +24,7 @@ output application/json
 }]]></ee:set-payload>
 				</ee:message>
 			</ee:transform>
-			<logger
-				level="INFO"
-				doc:name="LOG End Global Error Handler"
-				doc:id="43e43f67-13c6-4656-8325-083cf251961a"
-				message="#[correlationId]&lt;Error Log END Global Error&gt; #[payload]" />
-		</on-error-continue>
+			<logger level="INFO" doc:name="LOG End Global Error Handler" doc:id="43e43f67-13c6-4656-8325-083cf251961a" message="#[correlationId]&lt;Error Log END Global Error&gt; #[payload]" />
+		</on-error-propagate>
 	</error-handler>
 </mule>

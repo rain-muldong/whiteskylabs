@@ -9,7 +9,8 @@ https:
     translate:
         host: "translate.yandex.net"
         port: "443"
-        url: "/api/v1.5/tr/translate?key=trnsl.1.1.20200305T023533Z.cbc34740d336ee24.de6cb5119aac9d6fc44c22c839ca9e5e617059bd&lang=en-"
+        path: "/api/v1.5/tr/translate"
+        key: "trnsl.1.1.20200305T023533Z.cbc34740d336ee24.de6cb5119aac9d6fc44c22c839ca9e5e617059bd"
 jms:
     broker:
         url: "tcp://localhost:61616"

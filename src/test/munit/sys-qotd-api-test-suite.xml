@@ -39,22 +39,23 @@
 			<flow-ref doc:name="Flow-ref to sys-qotd-api:\system-qotd:Flow" doc:id="432d0029-9029-42be-8468-2099da3cbb96" name="sys-qotd-api:\system-qotd:Flow"/>
 		</munit:execution>
 		<munit:validation >
-			<munit-tools:assert doc:name="Assert expression" doc:id="9450d048-f96a-49ab-906d-1c29483ecc28" />
 			<munit-tools:verify-call doc:name="Verify Translate API was called 6 times" doc:id="e8954f73-dd90-45ae-b0c7-503e87cd5481" processor="http:request" times="6">
 				<munit-tools:with-attributes >
 					<munit-tools:with-attribute whereValue="HTTPS POST Translate Quote of the Day XML API" attributeName="doc:name" />
 				</munit-tools:with-attributes>
 			</munit-tools:verify-call>
-			<munit-tools:verify-call doc:name="Verify call" doc:id="48e6ab50-9d31-4342-8a1a-36d1961cabe0" processor="logger" times="6">
-				<munit-tools:with-attributes >
-					<munit-tools:with-attribute whereValue="Log End Translate Quote of the Day" attributeName="doc:name" />
-				</munit-tools:with-attributes>
-			</munit-tools:verify-call>
+			<munit-tools:assert doc:name="Assert expression" doc:id="5852b192-b9b2-4b48-a758-90c036777c78" >
+				<munit-tools:that ><![CDATA[#[import * from dw::test::Asserts 
+ ---
+payload must equalTo({
+	message : "API call success!"
+})]]]></munit-tools:that>
+			</munit-tools:assert>
 		</munit:validation>
 	</munit:test>
 	<munit:test name="sys-qotd-api-test-suite:\jmsflow:FlowTest" doc:id="271f2c99-9240-481d-92f9-95454b661606" description="Test JMS">
 		<munit:behavior>
-			<munit-tools:mock-when doc:name="Mock when" doc:id="9dce5ec4-a391-4c8a-ae2e-5a861436cbd3" processor="jms:listener">
+			<munit-tools:mock-when doc:name="Mock when JMS Subscirbes" doc:id="9dce5ec4-a391-4c8a-ae2e-5a861436cbd3" processor="jms:listener">
 				<munit-tools:with-attributes >
 					<munit-tools:with-attribute whereValue="JMS Subscribe Ex1TestTopic01 TOPIC" attributeName="doc:name" />
 				</munit-tools:with-attributes>
@@ -70,9 +71,9 @@
 			<munit-tools:assert-that doc:name="Assert that" doc:id="87491282-ab77-4fff-b965-5e55dab827db" is="#[MunitTools::containsString('Non pioveva quando Noè costruì larca....')]" expression="#[payload]"/>
 		</munit:validation>
 	</munit:test>
-	<munit:test name="sys-qotd-api-test-suiteTest" doc:id="378ac28b-ea3e-4d67-ada7-9a6924e16fa6" expectedErrorType="HTTP:CONNECTIVITY">
+	<munit:test name="sys-qotd-api-test-suite:\sys-qotd-api-http-connectivity:Flow" doc:id="378ac28b-ea3e-4d67-ada7-9a6924e16fa6" expectedErrorType="HTTP:CONNECTIVITY">
 		<munit:behavior >
-			<munit-tools:mock-when doc:name="Mock when" doc:id="3e31603c-962a-4bbf-bc9a-1872069260a6" processor="http:request">
+			<munit-tools:mock-when doc:name="Mock when QOTD API is called - HTTP:CONNECTIVITY" doc:id="3e31603c-962a-4bbf-bc9a-1872069260a6" processor="http:request">
 				<munit-tools:with-attributes >
 					<munit-tools:with-attribute whereValue="HTTP GET Quote of the Day REST API" attributeName="doc:name" />
 				</munit-tools:with-attributes>
@@ -82,15 +83,33 @@
 			</munit-tools:mock-when>
 		</munit:behavior>
 		<munit:execution >
-			<flow-ref doc:name="Flow Reference" doc:id="44a0b5e8-d030-4a6c-bef4-c0caa62027eb" name="sys-qod:\get-qotd:Flow"/>
+			<try doc:name="Try" doc:id="eaea9f7c-8edf-4ff4-b9ab-42e0881731f2" >
+				<flow-ref doc:name="sys-qod:\get-qotd:Flow" doc:id="44a0b5e8-d030-4a6c-bef4-c0caa62027eb" name="sys-qod:\get-qotd:Flow" />
+			</try>
 		</munit:execution>
 		<munit:validation >
-			<munit-tools:assert-that doc:name="Assert that" doc:id="0663dfb8-f0c5-4ddb-b913-4d9140d475f5" is="#[MunitTools::notNullValue()]" expression="#[payload]"/>
+			<munit-tools:assert-that doc:name="Assert that Payload is same as Error Payload" doc:id="0663dfb8-f0c5-4ddb-b913-4d9140d475f5" is='#[MunitTools::equalTo({
+  "message": "Cannot connect to QOTD service! Try again later!",
+  "error_type": {
+    "identifier": "CONNECTIVITY",
+    "parentErrorType": {
+      "identifier": "CONNECTIVITY",
+      "parentErrorType": {
+        "identifier": "ANY",
+        "parentErrorType": null,
+        "namespace": "MULE"
+      },
+      "namespace": "MULE"
+    },
+    "namespace": "HTTP"
+  },
+  "description": ""
+})]' expression="#[payload]"/>
 		</munit:validation>
 	</munit:test>
-	<munit:test name="sys-qotd-api-test-suiteTest1" doc:id="8f847f85-71fe-4c79-b12d-379d01400bb4" expectedErrorType="HTTP:TOO_MANY_REQUESTS">
+	<munit:test name="sys-qotd-api-test-suite:\sys-qotd-api-http-too-many-requests:Flow" doc:id="8f847f85-71fe-4c79-b12d-379d01400bb4" expectedErrorType="HTTP:TOO_MANY_REQUESTS">
 		<munit:behavior >
-			<munit-tools:mock-when doc:name="Mock when" doc:id="72b729d8-fa59-4ed8-a049-b49a2e73da54" processor="http:request">
+			<munit-tools:mock-when doc:name="Mock when QOTD API is called" doc:id="72b729d8-fa59-4ed8-a049-b49a2e73da54" processor="http:request">
 				<munit-tools:with-attributes >
 					<munit-tools:with-attribute whereValue="HTTP GET Quote of the Day REST API" attributeName="doc:name" />
 				</munit-tools:with-attributes>
@@ -100,10 +119,12 @@
 			</munit-tools:mock-when>
 		</munit:behavior>
 		<munit:execution >
-			<flow-ref doc:name="Flow Reference" doc:id="7d76c975-7692-4655-8ad9-e388c8ac6662" name="sys-qotd-api:\system-qotd:Flow"/>
+			<try doc:name="Try" doc:id="5e03c0f8-63a5-4700-8c79-341ac9ee535a" >
+				<flow-ref doc:name="sys-qod:\get-qotd:Flow" doc:id="7d76c975-7692-4655-8ad9-e388c8ac6662" name="sys-qod:\get-qotd:Flow" />
+			</try>
 		</munit:execution>
 		<munit:validation >
-			<munit-tools:assert-that doc:name="Assert that" doc:id="66695827-a2aa-4808-ba12-ff4fa5f4c4a3" is='#[MunitTools::equalTo({
+			<munit-tools:assert-that doc:name="Assert that Payload is same as Error Payload" doc:id="66695827-a2aa-4808-ba12-ff4fa5f4c4a3" is='#[MunitTools::equalTo({
   "message": "Quote retrieval Limit reached (10 quotes/hour). Please Try again later.",
   "error_type": {
     "identifier": "TOO_MANY_REQUESTS",
@@ -116,6 +137,203 @@
   },
   "description": ""
 })]' expression="#[payload]" message='"wowowee"'/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="sys-qotd-api-test-suite:\sys-translate-http-connectivity:Flow" doc:id="acd13062-134a-4a86-a104-0de697428b0a" expectedErrorType="HTTP:CONNECTIVITY">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when POST Translate API is called" doc:id="b7df1c17-1656-4582-aff8-1636ecb5efa2" processor="http:request">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="HTTPS POST Translate Quote of the Day XML API" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="HTTP:CONNECTIVITY" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<try doc:name="Try" doc:id="5b0e472c-0926-466c-9f31-301acc9196a0" >
+				<flow-ref doc:name="sys-translate:\call-translation:Flow" doc:id="e80bb6a0-3832-4701-a90f-89e6549ecd66" name="sys-translate:\call-translation:Flow" />
+			</try>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that Payload is same as Error Payload" doc:id="f04b275e-35c4-41a6-bc13-c500e9b202e3" is="#[MunitTools::equalTo({
+    &quot;success&quot;: {
+        &quot;total&quot;: 1
+    },
+    &quot;contents&quot;: {
+        &quot;quotes&quot;: [
+            {
+                &quot;quote&quot;: &quot;It wasn't raining when Noah built the ark....&quot;,
+                &quot;length&quot;: &quot;45&quot;,
+                &quot;author&quot;: &quot;Howard Ruff&quot;,
+                &quot;tags&quot;: [
+                    &quot;being-prepared&quot;,
+                    &quot;inspire&quot;
+                ],
+                &quot;category&quot;: &quot;inspire&quot;,
+                &quot;language&quot;: &quot;en&quot;,
+                &quot;date&quot;: &quot;2020-03-19&quot;,
+                &quot;permalink&quot;: &quot;https://theysaidso.com/quote/howard-ruff-it-wasnt-raining-when-noah-built-the-ark&quot;,
+                &quot;id&quot;: &quot;bcYwS_RS1KCvfQ_ymsXk0AeF&quot;,
+                &quot;background&quot;: &quot;https://theysaidso.com/img/qod/qod-inspire.jpg&quot;,
+                &quot;title&quot;: &quot;Inspiring Quote of the day&quot;
+            }
+        ]
+    },
+    &quot;baseurl&quot;: &quot;https://theysaidso.com&quot;,
+    &quot;copyright&quot;: {
+        &quot;year&quot;: 2022,
+        &quot;url&quot;: &quot;https://theysaidso.com&quot;
+    }
+}
+INFO  2020-03-19 12:49:43,922 [[MuleRuntime].cpuLight.04: [sys-qotd-api].sys-qod:\get-qotd:Flow.CPU_LITE @36d5fd5f] org.mule.runtime.core.internal.processor.LoggerMessage
+Processor: 632c51c7-c641-4193-9a45-1da541df2e82&lt;Log START Prepare QOTD Data&gt;{
+    &quot;success&quot;: {
+        &quot;total&quot;: 1
+    },
+    &quot;contents&quot;: {
+        &quot;quotes&quot;: [
+            {
+                &quot;quote&quot;: &quot;It wasn't raining when Noah built the ark....&quot;,
+                &quot;length&quot;: &quot;45&quot;,
+                &quot;author&quot;: &quot;Howard Ruff&quot;,
+                &quot;tags&quot;: [
+                    &quot;being-prepared&quot;,
+                    &quot;inspire&quot;
+                ],
+                &quot;category&quot;: &quot;inspire&quot;,
+                &quot;language&quot;: &quot;en&quot;,
+                &quot;date&quot;: &quot;2020-03-19&quot;,
+                &quot;permalink&quot;: &quot;https://theysaidso.com/quote/howard-ruff-it-wasnt-raining-when-noah-built-the-ark&quot;,
+                &quot;id&quot;: &quot;bcYwS_RS1KCvfQ_ymsXk0AeF&quot;,
+                &quot;background&quot;: &quot;https://theysaidso.com/img/qod/qod-inspire.jpg&quot;,
+                &quot;title&quot;: &quot;Inspiring Quote of the day&quot;
+            }
+        ]
+    },
+    &quot;baseurl&quot;: &quot;https://theysaidso.com&quot;,
+    &quot;copyright&quot;: {
+        &quot;year&quot;: 2022,
+        &quot;url&quot;: &quot;https://theysaidso.com&quot;
+    }
+})]" expression="#[payload]"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="sys-qotd-api-test-suite:\sys-translate-http-unauthorized:Flow" doc:id="45ba4b73-f2a2-4acd-b77c-a3c986ec193a" expectedErrorType="HTTP:UNAUTHORIZED">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when POST Translate API is called" doc:id="25687996-8039-468e-b0b8-01d29d675587" processor="http:request">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="HTTPS POST Translate Quote of the Day XML API" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="HTTP:UNAUTHORIZED" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<try doc:name="Try" doc:id="99fddf9f-230c-46a2-b833-101d62052161" >
+				<flow-ref doc:name="sys-translate:\call-translation:Flow" doc:id="733f6785-61e1-4307-a575-468fca44268e" name="sys-translate:\call-translation:Flow" />
+			</try>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that Payload is same as Error Payload" doc:id="a0cd2c94-2a40-46e7-92b8-bee6bbb6b6a3" is="#[MunitTools::equalTo({
+    &quot;success&quot;: {
+        &quot;total&quot;: 1
+    },
+    &quot;contents&quot;: {
+        &quot;quotes&quot;: [
+            {
+                &quot;quote&quot;: &quot;It wasn't raining when Noah built the ark....&quot;,
+                &quot;length&quot;: &quot;45&quot;,
+                &quot;author&quot;: &quot;Howard Ruff&quot;,
+                &quot;tags&quot;: [
+                    &quot;being-prepared&quot;,
+                    &quot;inspire&quot;
+                ],
+                &quot;category&quot;: &quot;inspire&quot;,
+                &quot;language&quot;: &quot;en&quot;,
+                &quot;date&quot;: &quot;2020-03-19&quot;,
+                &quot;permalink&quot;: &quot;https://theysaidso.com/quote/howard-ruff-it-wasnt-raining-when-noah-built-the-ark&quot;,
+                &quot;id&quot;: &quot;bcYwS_RS1KCvfQ_ymsXk0AeF&quot;,
+                &quot;background&quot;: &quot;https://theysaidso.com/img/qod/qod-inspire.jpg&quot;,
+                &quot;title&quot;: &quot;Inspiring Quote of the day&quot;
+            }
+        ]
+    },
+    &quot;baseurl&quot;: &quot;https://theysaidso.com&quot;,
+    &quot;copyright&quot;: {
+        &quot;year&quot;: 2022,
+        &quot;url&quot;: &quot;https://theysaidso.com&quot;
+    }
+})]" expression="#[payload]"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="sys-qotd-api-test-suite:\sys-jms-connectivity-error:Flow" doc:id="7870e42f-a153-4ac7-92f6-79871418daba" expectedErrorType="JMS:CONNECTIVITY">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when JMS Publish is called" doc:id="2e05bdd9-c1ec-4608-af0b-2846f259419b" processor="jms:publish">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="JMS Publish Ex1TestTopic01 TOPIC" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="JMS:CONNECTIVITY" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<try doc:name="Try" doc:id="1b6dd8c2-ae1b-48c6-9b40-6ff712e3c8f5" >
+				<flow-ref doc:name="sys-jms:\jmsPublish:Flow" doc:id="d01045d7-3184-420f-8499-95f678d9f3e7" name="sys-jms:\jmsPublish:Flow" />
+			</try>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that Payload is same as Error Payload" doc:id="8bc0251c-b69c-4b07-9400-304c2d1b3934" is='#[MunitTools::equalTo({
+  "message": "JMS Publish connection failed. Try again later.",
+  "error_type": {
+    "identifier": "CONNECTIVITY",
+    "parentErrorType": {
+      "identifier": "CONNECTIVITY",
+      "parentErrorType": {
+        "identifier": "ANY",
+        "parentErrorType": null,
+        "namespace": "MULE"
+      },
+      "namespace": "MULE"
+    },
+    "namespace": "JMS"
+  },
+  "description": ""
+})]' expression="#[payload]"/>
+		</munit:validation>
+	</munit:test>
+	<munit:test name="sys-write:\write-to-file-access-denied:Flow" doc:id="ca6dbbf0-982e-44ec-b9bf-321f5db7c42c" expectedErrorType="FILE:ACCESS_DENIED">
+		<munit:behavior >
+			<munit-tools:mock-when doc:name="Mock when Write to File is called" doc:id="0fe5767f-7ad3-4690-8038-01ed035b1ffc" processor="file:write">
+				<munit-tools:with-attributes >
+					<munit-tools:with-attribute whereValue="Write to File" attributeName="doc:name" />
+				</munit-tools:with-attributes>
+				<munit-tools:then-return >
+					<munit-tools:error typeId="FILE:ACCESS_DENIED" />
+				</munit-tools:then-return>
+			</munit-tools:mock-when>
+		</munit:behavior>
+		<munit:execution >
+			<try doc:name="Try" doc:id="045d9fa2-836f-4477-8cc2-7aff675795f6" >
+				<flow-ref doc:name="sys-write:\write-to-file:Flow" doc:id="a548605b-ac1b-40a1-925e-da4ae3ce826c" name="sys-write:\write-to-file:Flow" />
+			</try>
+		</munit:execution>
+		<munit:validation >
+			<munit-tools:assert-that doc:name="Assert that" doc:id="94008706-c435-4831-b3f5-a163d3869c75" is='#[MunitTools::equalTo({
+  "message": "Unable to access file.",
+  "error_type": {
+    "identifier": "ACCESS_DENIED",
+    "parentErrorType": {
+      "identifier": "ANY",
+      "parentErrorType": null,
+      "namespace": "MULE"
+    },
+    "namespace": "FILE"
+  },
+  "description": ""
+})]' expression="#[payload]"/>
 		</munit:validation>
 	</munit:test>
 		

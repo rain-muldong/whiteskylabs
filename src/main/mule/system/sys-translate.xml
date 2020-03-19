@@ -24,7 +24,13 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 			doc:name="HTTPS POST Translate Quote of the Day XML API"
 			doc:id="34b8e2fe-e84e-4433-a741-1829ff760ec8"
 			config-ref="HTTPS_Request_configuration"
-			path="#[vars.translateURL]">
+			path="#[(Mule::p('https.translate.path'))]">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"key" : p('https.translate.key'),
+	"lang" : vars.translateURL
+}]]]></http:query-params>
 
 
 		</http:request>

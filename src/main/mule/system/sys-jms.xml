@@ -38,7 +38,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 				type="JMS:CONNECTIVITY, JMS:DESTINATION_NOT_FOUND">
 				<logger
 					level="INFO"
-					doc:name="Logger"
+					doc:name="Error Log START JMS Publish"
 					doc:id="557583ab-122d-4031-b271-4fabc44952eb"
 					message="#[correlationId]&lt;Error Log START JMS Publish&gt;#[payload]" />
 				<ee:transform
@@ -55,7 +55,7 @@ output application/json
 				</ee:transform>
 				<logger
 					level="INFO"
-					doc:name="Logger"
+					doc:name="Error Log END JMS Publish"
 					doc:id="5716d5bd-a80d-4708-9c7c-d3e9fa983eef"
 					message="#[correlationId]&lt;Error Log END JMS Publish&gt;#[payload]" />
 			</on-error-propagate>

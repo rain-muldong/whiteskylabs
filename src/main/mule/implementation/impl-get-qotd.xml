@@ -162,7 +162,8 @@ var nonenglang = ((payload) as String default "")
 
 output text/plain
 ---
-(Mule::p('https.translate.url')) ++ nonenglang ]]></ee:set-variable>
+"en-" ++ nonenglang
+//(Mule::p('https.translate.url')) ++ nonenglang ]]></ee:set-variable>
 				</ee:variables>
 			</ee:transform>
 			<flow-ref
